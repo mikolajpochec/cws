@@ -1,0 +1,104 @@
+# cws — Claude Workspace Switcher
+
+Switch between multiple Claude Code accounts/config dirs (`personal`, `work`,
+whatever you add) in your shell, with auto-binding by directory, per-workspace
+colored prompt badges, and auto-generated matching Claude Code themes.
+
+Each workspace maps to its own `CLAUDE_CONFIG_DIR` (a separate `~/.claude-*`
+directory), so logins, settings, MCP servers, history, and themes are fully
+isolated per account. Login is stored per-config-dir in the OS keychain by
+`claude` itself — cws never touches or stores credentials.
+
+## Install
+
+```sh
+git clone <this repo> ~/dev/cws
+cd ~/dev/cws
+./install.sh
+```
+
+This is idempotent: it won't overwrite an existing workspace registry or an
+existing cws block in your shell rc files. On a fresh install it creates two
+example workspaces, `personal` (→ `~/.claude`) and `work` (→ `~/.claude-work`),
+each with an auto-generated theme, and wires sourcing into `~/.zshrc` and
+`~/.bashrc`.
+
+bash support needs bash 4+ (associative arrays) — macOS ships bash 3.2, so
+on a Mac without a newer bash (`brew install bash`) the installer skips the
+`~/.bashrc` block and prints a note; zsh has no such requirement.
+
+After installing, add the prompt segment to your prompt:
+
+```sh
+# zsh (needs: setopt prompt_subst)
+PROMPT='%n@%m $(cws_prompt_seg)%~ > '
+
+# bash
+PS1='\u@\h $(cws_prompt_seg_bash)\w \$ '
+```
+
+Open a new terminal and you should see a colored `[  personal]` badge.
+
+## Usage
+
+```
+cws                      show active workspace
+cws <name>               set env for current shell (auto-rebind keeps it in sync)
+cws <name> <claude args> one-shot launch claude in that workspace
+cws ls                   list workspaces + bindings + colors
+cws add <name> [globs]   add a workspace - color + theme auto-assigned
+cws rm <name>            remove a workspace (registry + token; config dir kept)
+cws auth <name>          claude auth login for that workspace's account
+cws theme                show/set a workspace's theme
+cws trust [path]         mark a path trusted in the active workspace's config
+cws help                 full command reference
+```
+
+### Binding a workspace to a directory
+
+```sh
+cws add client-x '**/dev/*client-x*'
+```
+
+Now `cd`-ing anywhere under a `*client-x*` path auto-switches to that
+workspace; `cd`-ing back out returns to whatever the fallback workspace is
+(the first entry in the registry with no bindings — `personal` by default).
+
+### Colors & themes
+
+`cws add` auto-assigns the next unused color from a 12-color palette
+(`lib/colors.sh`) and generates a full Claude Code custom theme
+(`lib/theme-gen.sh`, derives the theme's ~40 color keys from the one accent
+color via HSL math) written to `<configDir>/themes/<name>.json`, set as that
+workspace's default theme. No manual theme authoring needed.
+
+## Layout
+
+```
+shell/cws.zsh     zsh entrypoint (chpwd hook + prompt var)
+shell/cws.bash    bash entrypoint (PROMPT_COMMAND + PS1)
+lib/registry.sh   registry parsing, env apply/clear, directory auto-bind
+lib/colors.sh     palette + color assignment
+lib/theme-gen.sh  accent-color -> full theme JSON generator
+lib/commands.sh   add/rm/ls/theme/auth/trust/status/help + the cws dispatcher
+lib/prompt.sh     cws_prompt_seg (zsh) / cws_prompt_seg_bash (bash)
+install.sh        idempotent installer
+```
+
+This repo holds only the *code*. Your actual workspace list (account names,
+config dir paths, directory bindings, colors) lives outside the repo in
+`$CWS_ROOT` (default `~/.config/claude-workspaces/workspaces`) and is never
+read from or written into this repo — safe to keep this repo public while
+keeping your account setup private.
+
+## Registry format
+
+```
+name|configDir|keychainService|bindings|color
+```
+
+- `bindings`: comma-separated glob patterns matched against `$PWD`. Empty =
+  never auto-bound by directory; the first such entry is the fallback
+  workspace used when nothing else matches.
+- `color`: hex string (`#c084fc`), used for the prompt badge and as the seed
+  for that workspace's generated theme.
