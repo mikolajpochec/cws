@@ -10,6 +10,7 @@
 
 : ${CWS_HOME:?"cws.zsh: set CWS_HOME to this repo path before sourcing"}
 : ${CWS_ROOT:=$HOME/.config/claude-workspaces}
+export CWS_HOME CWS_ROOT
 CWS_REG="$CWS_ROOT/workspaces"
 
 source "$CWS_HOME/lib/registry.sh"

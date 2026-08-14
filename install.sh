@@ -67,8 +67,26 @@ os.makedirs(os.path.dirname(f) or ".", exist_ok=True)
 with open(f, "w") as fp:
     json.dump(data, fp, indent=2); fp.write("\n")
 PY
+
+  # wire the statusLine for both example workspaces
+  statusline_cmd="$REPO_ROOT/lib/statusline.sh"
+  for f in "$personal_dir/settings.json" "$work_dir/settings.json"; do
+    python3 - "$f" "$statusline_cmd" <<'PY'
+import json, os, sys
+f, cmd = sys.argv[1], sys.argv[2]
+data = {}
+if os.path.exists(f):
+    with open(f) as fp:
+        data = json.load(fp)
+data["statusLine"] = {"type": "command", "command": cmd}
+with open(f, "w") as fp:
+    json.dump(data, fp, indent=2); fp.write("\n")
+PY
+  done
+
   echo "  wrote $CWS_REG"
   echo "  wrote $personal_dir/themes/personal.json, $work_dir/themes/work.json"
+  echo "  wired statusLine -> $statusline_cmd"
 fi
 
 _install_rc_block() {

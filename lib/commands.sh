@@ -42,6 +42,33 @@ os.replace(tmp, f)
 PY
 }
 
+# _cws_json_statusline set <file> <command>
+# wires settings.json's statusLine to lib/statusline.sh, idempotent (only
+# touches the key if absent or if it still points at a cws statusline.sh -
+# never overwrites a user's own custom statusLine command).
+_cws_json_statusline() {
+  python3 - "$@" <<'PY'
+import json, os, sys
+f, cmd = sys.argv[1], sys.argv[2]
+data = {}
+if os.path.exists(f):
+    try:
+        with open(f) as fp:
+            data = json.load(fp)
+    except Exception as e:
+        print(f"cws: cannot parse {f}: {e}", file=sys.stderr); sys.exit(1)
+existing = data.get("statusLine")
+if existing and isinstance(existing, dict) and "statusline.sh" not in existing.get("command", ""):
+    sys.exit(0)  # user has their own statusLine - don't clobber it
+data["statusLine"] = {"type": "command", "command": cmd}
+os.makedirs(os.path.dirname(f) or ".", exist_ok=True)
+tmp = f + ".tmp"
+with open(tmp, "w") as fp:
+    json.dump(data, fp, indent=2); fp.write("\n")
+os.replace(tmp, f)
+PY
+}
+
 # ~/.claude/settings.json is both personal's user settings AND the *project*
 # settings for cwd=$HOME - a theme key there wins over every workspace's own
 # theme whenever claude starts from $HOME. detect it.
@@ -256,6 +283,7 @@ _cws_add() {
   local themefile="$dir/themes/$name.json"
   _cws_gen_theme "$(_cws_titlecase "$name")" "$color" "$themefile"
   _cws_json_theme set "$dir/settings.json" "custom:$name"
+  _cws_json_statusline "$dir/settings.json" "$CWS_HOME/lib/statusline.sh"
 
   echo "workspace '$name' registered (config: $dir, color: $color)"
   echo "theme generated: ${themefile/#$HOME/~}"

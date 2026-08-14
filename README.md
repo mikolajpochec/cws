@@ -9,10 +9,16 @@ directory), so logins, settings, MCP servers, history, and themes are fully
 isolated per account. Login is stored per-config-dir in the OS keychain by
 `claude` itself — cws never touches or stores credentials.
 
+## Requirements
+
+- zsh or bash 4+ (macOS ships bash 3.2 — install a newer one for bash support:
+  `brew install bash`; zsh has no such requirement)
+- `python3` (theme generation, JSON settings edits, status line)
+
 ## Install
 
 ```sh
-git clone <this repo> ~/dev/cws
+git clone https://github.com/mikolajpochec/cws.git ~/dev/cws
 cd ~/dev/cws
 ./install.sh
 ```
@@ -72,17 +78,39 @@ workspace; `cd`-ing back out returns to whatever the fallback workspace is
 color via HSL math) written to `<configDir>/themes/<name>.json`, set as that
 workspace's default theme. No manual theme authoring needed.
 
+### Status line
+
+`cws add` (and `install.sh` for the two example workspaces) also wires each
+workspace's `settings.json` to `lib/statusline.sh` as its `statusLine`
+command. It shows, in the workspace's badge color:
+
+```
+ personal  Sonnet 5  |  project-dir  |  [####------] 42% ctx
+effort high  |  cost $0.12  |  time 12m5s  |  5h limit 24%
+```
+
+workspace badge, model, dir, and context-window bar on line one; effort
+level, session cost/duration, and 5-hour rate limit on line two
+(fields that aren't present in a given session, like `effort` or
+`rate_limits`, are just omitted). It reads the badge color back out of the
+private registry via `$CLAUDE_WORKSPACE`/`$CWS_ROOT`, both exported by
+`shell/cws.zsh`/`cws.bash`, so it stays in sync with the prompt segment
+without hardcoding any workspace name. Never overwrites a `statusLine` you've
+set to something else — it only claims the key when it's unset or already
+points at `statusline.sh`.
+
 ## Layout
 
 ```
-shell/cws.zsh     zsh entrypoint (chpwd hook + prompt var)
-shell/cws.bash    bash entrypoint (PROMPT_COMMAND + PS1)
-lib/registry.sh   registry parsing, env apply/clear, directory auto-bind
-lib/colors.sh     palette + color assignment
-lib/theme-gen.sh  accent-color -> full theme JSON generator
-lib/commands.sh   add/rm/ls/theme/auth/trust/status/help + the cws dispatcher
-lib/prompt.sh     cws_prompt_seg (zsh) / cws_prompt_seg_bash (bash)
-install.sh        idempotent installer
+shell/cws.zsh      zsh entrypoint (chpwd hook + prompt var)
+shell/cws.bash     bash entrypoint (PROMPT_COMMAND + PS1)
+lib/registry.sh    registry parsing, env apply/clear, directory auto-bind
+lib/colors.sh      palette + color assignment
+lib/theme-gen.sh   accent-color -> full theme JSON generator
+lib/commands.sh    add/rm/ls/theme/auth/trust/status/help + the cws dispatcher
+lib/prompt.sh      cws_prompt_seg (zsh) / cws_prompt_seg_bash (bash)
+lib/statusline.sh  Claude Code statusLine renderer (workspace-colored)
+install.sh         idempotent installer
 ```
 
 This repo holds only the *code*. Your actual workspace list (account names,
@@ -102,3 +130,7 @@ name|configDir|keychainService|bindings|color
   workspace used when nothing else matches.
 - `color`: hex string (`#c084fc`), used for the prompt badge and as the seed
   for that workspace's generated theme.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
