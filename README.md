@@ -1,4 +1,5 @@
 # cws — Claude Workspace Switcher
+<img width="1237" height="845" alt="image" src="https://github.com/user-attachments/assets/2ccb86bc-8a2f-4a31-946d-b797d9c36d51" />
 
 Switch between multiple Claude Code accounts/config dirs (`personal`, `work`,
 whatever you add) in your shell, with auto-binding by directory, per-workspace
