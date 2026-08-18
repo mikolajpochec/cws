@@ -58,6 +58,7 @@ cws rm <name>            remove a workspace (registry + token; config dir kept)
 cws auth <name>          claude auth login for that workspace's account
 cws theme                show/set a workspace's theme
 cws trust [path]         mark a path trusted in the active workspace's config
+cws update               pull the latest cws release
 cws help                 full command reference
 ```
 
@@ -99,6 +100,17 @@ private registry via `$CLAUDE_WORKSPACE`/`$CWS_ROOT`, both exported by
 without hardcoding any workspace name. Never overwrites a `statusLine` you've
 set to something else — it only claims the key when it's unset or already
 points at `statusline.sh`.
+
+### Updating
+
+`cws update` fetches `origin`, shows what's new, and fast-forwards `$CWS_HOME`
+(only works for a `git clone` install, the recommended path above - it
+declines cleanly on a vendored/copied checkout with no remote). Each
+interactive shell also does a passive, offline check at startup - it never
+hits the network itself, just reads whatever `origin/<branch>` was last
+fetched to, and prints a one-line nudge if you're behind. Once a week it
+kicks a silent background `git fetch` so that check has fresh data next time,
+without ever blocking shell startup.
 
 ## Layout
 

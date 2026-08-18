@@ -43,6 +43,7 @@ elif [[ "$PROMPT_COMMAND" != *"_cws_precmd"* ]]; then
   PROMPT_COMMAND="_cws_precmd;$PROMPT_COMMAND"
 fi
 _cws_autobind
+case $- in *i*) _cws_check_update ;; esac
 
 # add this to PS1, e.g.:
 #   PS1='\u@\h $(cws_prompt_seg_bash)\w \$ '

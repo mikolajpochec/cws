@@ -188,6 +188,60 @@ cws-status() {
   [[ $dir == "$HOME/.claude" ]] || _cws_theme_warn_shadow
 }
 
+# _cws_update: explicit `cws update` - fetches origin, shows what's new, and
+# fast-forwards $CWS_HOME. Only works when cws itself was installed via
+# `git clone` (the recommended install path); a copied/vendored checkout has
+# no remote to pull from, so it's told to update itself manually.
+_cws_update() {
+  if [[ ! -d "$CWS_HOME/.git" ]]; then
+    echo "cws update: $CWS_HOME isn't a git checkout - update it manually (git pull, or re-clone)." >&2
+    return 1
+  fi
+  echo "cws: checking $CWS_HOME for updates..."
+  if ! git -C "$CWS_HOME" fetch --quiet origin; then
+    echo "cws update: fetch failed - check your network or the 'origin' remote" >&2
+    return 1
+  fi
+  local branch behind
+  branch=$(git -C "$CWS_HOME" symbolic-ref --short HEAD 2>/dev/null) || branch=main
+  behind=$(git -C "$CWS_HOME" rev-list --count "HEAD..origin/$branch" 2>/dev/null)
+  if [[ -z $behind || $behind -eq 0 ]]; then
+    echo "cws: already up to date ($(git -C "$CWS_HOME" rev-parse --short HEAD))"
+    return 0
+  fi
+  echo "cws: $behind commit(s) behind origin/$branch:"
+  git -C "$CWS_HOME" log --oneline "HEAD..origin/$branch"
+  if ! git -C "$CWS_HOME" pull --ff-only --quiet origin "$branch"; then
+    echo "cws update: not a fast-forward - local changes in $CWS_HOME? resolve manually." >&2
+    return 1
+  fi
+  echo "cws: updated to $(git -C "$CWS_HOME" rev-parse --short HEAD) - restart your shell (or: exec \$SHELL) to pick it up."
+}
+
+# _cws_check_update: passive, non-blocking staleness check run once at shell
+# startup. Never touches the network itself on the interactive path - it only
+# reads whatever origin/<branch> was last fetched to, so it costs nothing.
+# Once a week it kicks a background `git fetch` (disowned, silenced) so the
+# NEXT shell's check has fresh data. Silent no-op for a non-git checkout.
+_cws_check_update() {
+  [[ -d "$CWS_HOME/.git" ]] || return
+  local marker="$CWS_ROOT/.update-check" now age
+  now=$(date +%s)
+  if [[ -f "$marker" ]]; then
+    age=$(( now - $(cat "$marker" 2>/dev/null || echo "$now") ))
+  else
+    age=999999
+  fi
+  if [[ $age -ge 604800 ]]; then
+    echo "$now" > "$marker"
+    ( git -C "$CWS_HOME" fetch --quiet origin >/dev/null 2>&1 & ) 2>/dev/null
+  fi
+  local branch behind
+  branch=$(git -C "$CWS_HOME" symbolic-ref --short HEAD 2>/dev/null) || return
+  behind=$(git -C "$CWS_HOME" rev-list --count "HEAD..origin/$branch" 2>/dev/null)
+  [[ -n $behind && $behind -gt 0 ]] && echo "cws: $behind update(s) available - run: cws update"
+}
+
 _cws_help() {
   cat <<'EOF'
 cws - portable multi-workspace Claude Code launcher
@@ -206,6 +260,7 @@ USAGE
   cws auth <name>          claude auth login for that workspace's account
   cws reauth <name>        re-run login (same as cws auth)
   cws rm <name>            remove workspace (registry + token; keeps config dir)
+  cws update               pull the latest cws release (git checkout only)
   cws help                 this help
 
 LAYOUT
@@ -405,6 +460,7 @@ cws() {
     theme)  _cws_theme "$@" ;;
     status) cws-status ;;
     trust)  _cws_trust "$@" ;;
+    update) _cws_update ;;
     help|--help|-h) _cws_help ;;
     *)
       if [[ -n "${_CWS_WS[$cmd]:-}" ]]; then

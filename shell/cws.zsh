@@ -22,6 +22,7 @@ source "$CWS_HOME/lib/prompt.sh"
 autoload -Uz add-zsh-hook
 add-zsh-hook chpwd _cws_autobind
 _cws_autobind
+[[ -o interactive ]] && _cws_check_update
 
 # add this to PROMPT (with `setopt prompt_subst`), e.g.:
 #   PROMPT='%n@%m $(cws_prompt_seg)%~ > '
