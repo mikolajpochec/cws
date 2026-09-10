@@ -295,7 +295,7 @@ _cws_ls() {
   for name in "${_CWS_ORDER[@]}"; do
     dir=${_CWS_DIR[$name]}
     binds=${_CWS_BIND[$name]:-}
-    color=${_CWS_COLOR[$name]:-<none>}
+    color=${_CWS_COLOR[$name]:-}
     if _cws_auth_ok "$dir"; then
       authmark="login recorded"
     else
@@ -303,7 +303,12 @@ _cws_ls() {
     fi
     local prefix="  "
     [[ "${CLAUDE_WORKSPACE:-}" == "$name" ]] && prefix="> "
-    echo "${prefix}${name} -> ${dir/#$HOME/~} [color: $color]${binds:+ [bind: $binds]}  $authmark"
+    local namecol="$name"
+    if [[ -n $color ]]; then
+      namecol="\033[38;2;$(_cws_hex_to_rgb "$color")m${name}\033[0m"
+    fi
+    printf "%b%b -> %s [color: %s]%s  %s\n" \
+      "$prefix" "$namecol" "${dir/#$HOME/~}" "${color:-<none>}" "${binds:+ [bind: $binds]}" "$authmark"
   done
 }
 
