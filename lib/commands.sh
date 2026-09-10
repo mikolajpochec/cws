@@ -307,8 +307,8 @@ _cws_ls() {
     if [[ -n $color ]]; then
       namecol="\033[38;2;$(_cws_hex_to_rgb "$color")m${name}\033[0m"
     fi
-    printf "%b%b -> %s [color: %s]%s  %s\n" \
-      "$prefix" "$namecol" "${dir/#$HOME/~}" "${color:-<none>}" "${binds:+ [bind: $binds]}" "$authmark"
+    printf "%b%b -> %s%s  %s\n" \
+      "$prefix" "$namecol" "${dir/#$HOME/~}" "${binds:+ [bind: $binds]}" "$authmark"
   done
 }
 
