@@ -257,6 +257,8 @@ USAGE
   cws theme --unshadow     drop the theme key from ~/.claude/settings.json
   cws add <name> [glob1,glob2...]  add a workspace: config dir, registry row,
                                     auto-assigned color, auto-generated theme
+  cws bind <name>          bind the current directory (+ subtree) to a workspace
+  cws bind <name> <dir>    bind a given directory (+ subtree) to a workspace
   cws auth <name>          claude auth login for that workspace's account
   cws reauth <name>        re-run login (same as cws auth)
   cws rm <name>            remove workspace (registry + token; keeps config dir)
@@ -348,6 +350,60 @@ _cws_add() {
   echo "workspace '$name' registered (config: $dir, color: $color)"
   echo "theme generated: ${themefile/#$HOME/~}"
   echo "authenticate it now with:  cws auth $name"
+}
+
+# _cws_bind <name> [dir]
+# adds a directory (default: $PWD) plus its subtree to a workspace's
+# bindings, so `cd`-ing there auto-switches to it. Rewrites the matching
+# registry line in place with awk - the only line touched, comments and
+# ordering of every other line are left untouched.
+_cws_bind() {
+  local name=$1 target=$2
+  if [[ -z $name ]]; then
+    echo "usage: cws bind <name> [dir]   (dir defaults to the current directory)" >&2
+    return 1
+  fi
+  _cws_load
+  if [[ -z "${_CWS_WS[$name]:-}" ]]; then
+    echo "cws bind: no such workspace '$name' (see: cws ls)" >&2
+    return 1
+  fi
+  local dir
+  if [[ -z $target ]]; then
+    dir=$PWD
+  else
+    dir=$(cd "${target/#\~/$HOME}" 2>/dev/null && pwd) || {
+      echo "cws bind: no such directory '$target'" >&2
+      return 1
+    }
+  fi
+
+  local existing=${_CWS_BIND[$name]:-} newbinds rest m found=
+  # exact-match membership check via comma-split (not a glob/case match - a
+  # naive ",$existing," substring test breaks when two adjacent list items
+  # share the delimiting comma, e.g. "$dir,$dir/*" right next to each other).
+  rest="$existing,"
+  while [[ -n $rest ]]; do
+    m=${rest%%,*}
+    rest=${rest#*,}
+    [[ $m == "$dir" ]] && { found=1; break; }
+  done
+  if [[ -n $found ]]; then
+    echo "cws bind: '${dir/#$HOME/~}' is already bound to '$name'"
+    return 0
+  fi
+  local pattern="$dir,$dir/*"
+  [[ -z $existing ]] && newbinds="$pattern" || newbinds="$existing,$pattern"
+
+  awk -F'|' -v OFS='|' -v target="$name" -v newbinds="$newbinds" '
+    /^#/ || NF == 0 { print; next }
+    $1 == target { $4 = newbinds }
+    { print }
+  ' "$CWS_REG" > "$CWS_REG.tmp" && mv "$CWS_REG.tmp" "$CWS_REG"
+
+  _cws_load
+  [[ "${CLAUDE_WORKSPACE:-}" != "$name" ]] && _cws_autobind
+  echo "bound '${dir/#$HOME/~}' (and its subtree) to '$name'"
 }
 
 _cws_titlecase() {
@@ -458,6 +514,7 @@ cws() {
   local cmd=$1; shift
   case $cmd in
     add)    _cws_add "$@" ;;
+    bind)   _cws_bind "$@" ;;
     auth)   _cws_auth "$@" ;;
     reauth) _cws_auth "$@" ;;
     rm)     _cws_rm "$@" ;;

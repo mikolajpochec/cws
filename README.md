@@ -54,6 +54,7 @@ cws <name>               set env for current shell (auto-rebind keeps it in sync
 cws <name> <claude args> one-shot launch claude in that workspace
 cws ls                   list workspaces + bindings + colors
 cws add <name> [globs]   add a workspace - color + theme auto-assigned
+cws bind <name> [dir]    bind a directory (+ subtree) to a workspace - current dir if omitted
 cws rm <name>            remove a workspace (registry + token; config dir kept)
 cws auth <name>          claude auth login for that workspace's account
 cws theme                show/set a workspace's theme
@@ -64,13 +65,25 @@ cws help                 full command reference
 
 ### Binding a workspace to a directory
 
+For an existing workspace, bind an actual directory (its exact path plus
+subtree, no glob-writing needed):
+
+```sh
+cd ~/dev/client-x
+cws bind client-x          # binds the current directory
+cws bind client-x ~/other  # or bind an arbitrary directory
+```
+
+For a glob pattern instead (e.g. matching several directories by name), pass
+it when creating the workspace:
+
 ```sh
 cws add client-x '**/dev/*client-x*'
 ```
 
-Now `cd`-ing anywhere under a `*client-x*` path auto-switches to that
-workspace; `cd`-ing back out returns to whatever the fallback workspace is
-(the first entry in the registry with no bindings — `personal` by default).
+Either way, `cd`-ing into a bound path auto-switches to that workspace;
+`cd`-ing back out returns to whatever the fallback workspace is (the first
+entry in the registry with no bindings — `personal` by default).
 
 ### Colors & themes
 
