@@ -59,6 +59,7 @@ cws rm <name>            remove a workspace (registry + token; config dir kept)
 cws auth <name>          claude auth login for that workspace's account
 cws theme                show/set a workspace's theme
 cws trust [path]         mark a path trusted in the active workspace's config
+cws search-session <kw>  fuzzy-search past sessions across workspaces (-w a,b to narrow)
 cws update               pull the latest cws release
 cws help                 full command reference
 ```
@@ -113,6 +114,22 @@ private registry via `$CLAUDE_WORKSPACE`/`$CWS_ROOT`, both exported by
 without hardcoding any workspace name. Never overwrites a `statusLine` you've
 set to something else — it only claims the key when it's unset or already
 points at `statusline.sh`.
+
+### Searching sessions
+
+`cws search-session <keywords...>` (alias `cws search`) fuzzy-searches the
+Claude Code sessions of every workspace - titles, project path, git branch,
+your prompts and the chat text - and lists the best matches, each with a
+ready-to-paste resume command (`cd <project> && cws <ws> --resume <id>`).
+Matching is typo-tolerant; sessions that match every keyword rank first.
+
+```sh
+cws search-session window queue ratio
+cws search-session -w personal,work -n 20 auth bug   # or --workspace=personal,work
+```
+
+Extracted text is cached in `$CWS_ROOT/.search-cache` (per transcript, keyed
+by mtime + size), so repeat searches only re-read changed sessions.
 
 ### Updating
 

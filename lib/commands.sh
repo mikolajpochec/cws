@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sourced, not executed. cws command implementations: add/rm/ls/theme/auth/
-# reauth/trust/status/help, plus the `cws` dispatcher itself. shared verbatim
+# reauth/trust/status/search-session/help, plus the `cws` dispatcher itself. shared verbatim
 # between the zsh and bash entrypoints - no shell-specific syntax here.
 
 _cws_auth_ok() {
@@ -262,6 +262,11 @@ USAGE
   cws auth <name>          claude auth login for that workspace's account
   cws reauth <name>        re-run login (same as cws auth)
   cws rm <name>            remove workspace (registry + token; keeps config dir)
+  cws search-session <keywords...>   fuzzy-search sessions of all workspaces
+                           (titles, project path, branch, prompts, chat text),
+                           best matches first, each with a resume command
+      -w, --workspace=a,b  only search these workspaces
+      -n, --limit N        show N results (default 10)
   cws update               pull the latest cws release (git checkout only)
   cws help                 this help
 
@@ -406,6 +411,57 @@ _cws_bind() {
   echo "bound '${dir/#$HOME/~}' (and its subtree) to '$name'"
 }
 
+# _cws_search_session [-w ws1,ws2] [-n N] <keywords...>
+# fuzzy-searches session transcripts (titles, project path, branch, prompts,
+# chat text) of all workspaces, or just the -w ones, via search_session.py.
+_cws_search_session() {
+  _cws_load
+  local only="" limit=10 kw=() name
+  while (( $# > 0 )); do
+    case $1 in
+      -w|--workspace) only=$2; shift 2 || { echo "cws search-session: $1 needs a value" >&2; return 1; } ;;
+      -w=*|--workspace=*) only=${1#*=}; shift ;;
+      -w*) only=${1#-w}; shift ;;
+      -n|--limit) limit=$2; shift 2 || { echo "cws search-session: $1 needs a value" >&2; return 1; } ;;
+      -n=*|--limit=*) limit=${1#*=}; shift ;;
+      -h|--help)
+        echo "usage: cws search-session [-w|--workspace=ws1,ws2] [-n N] <keywords...>"
+        return 0 ;;
+      --) shift; kw+=("$@"); break ;;
+      *) kw+=("$1"); shift ;;
+    esac
+  done
+  if (( ${#kw[@]} == 0 )); then
+    echo "usage: cws search-session [-w|--workspace=ws1,ws2] [-n N] <keywords...>" >&2
+    return 1
+  fi
+  if [[ ! $limit =~ ^[0-9]+$ ]]; then
+    echo "cws search-session: -n expects a number, got '$limit'" >&2
+    return 1
+  fi
+  local rest m list=""
+  if [[ -n $only ]]; then
+    rest="$only,"
+    while [[ -n $rest ]]; do
+      m=${rest%%,*}
+      rest=${rest#*,}
+      [[ -z $m ]] && continue
+      if [[ -z "${_CWS_WS[$m]:-}" ]]; then
+        echo "cws search-session: unknown workspace '$m' (known: ${_CWS_ORDER[*]})" >&2
+        return 1
+      fi
+      list+="$m|${_CWS_DIR[$m]}|${_CWS_COLOR[$m]:-}"$'\n'
+    done
+  else
+    for name in "${_CWS_ORDER[@]}"; do
+      list+="$name|${_CWS_DIR[$name]}|${_CWS_COLOR[$name]:-}"$'\n'
+    done
+  fi
+  local color=()
+  [[ -t 1 && -z "${NO_COLOR:-}" ]] && color=(--color)
+  printf '%s' "$list" | python3 "$CWS_HOME/lib/search_session.py" -n "$limit" "${color[@]}" -- "${kw[@]}"
+}
+
 _cws_titlecase() {
   local s=$1
   s=${s//-/ }
@@ -523,6 +579,7 @@ cws() {
     status) cws-status ;;
     trust)  _cws_trust "$@" ;;
     update) _cws_update ;;
+    search-session|search) _cws_search_session "$@" ;;
     help|--help|-h) _cws_help ;;
     *)
       if [[ -n "${_CWS_WS[$cmd]:-}" ]]; then
@@ -532,7 +589,7 @@ cws() {
           command claude "$@"
         fi
       else
-        echo "cws: unknown '$cmd'. known: add|auth|reauth|rm|ls|theme|status|trust|help|${_CWS_ORDER[*]}" >&2
+        echo "cws: unknown '$cmd'. known: add|auth|reauth|rm|ls|theme|status|trust|search-session|update|help|${_CWS_ORDER[*]}" >&2
         return 1
       fi
       ;;
