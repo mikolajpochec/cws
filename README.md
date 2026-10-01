@@ -168,7 +168,10 @@ keeping your account setup private.
 name|configDir|keychainService|bindings|color
 ```
 
-- `bindings`: comma-separated glob patterns matched against `$PWD`. Empty =
+- `bindings`: comma-separated glob patterns matched against `$PWD`. When
+  several workspaces match, the most specific glob (most non-wildcard
+  characters) wins, so `~/dev/*client-x*` beats a catch-all `~/*`; ties go to
+  the earlier entry. Empty =
   never auto-bound by directory; the first such entry is the fallback
   workspace used when nothing else matches.
 - `color`: hex string (`#c084fc`), used for the prompt badge and as the seed

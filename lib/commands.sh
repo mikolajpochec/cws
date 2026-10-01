@@ -277,7 +277,9 @@ LAYOUT
   auth:         claude auth login, stored per-config-dir in macOS Keychain
 
 BINDINGS
-  Workspaces with bindings auto-switch when $PWD matches their glob. The first
+  Workspaces with bindings auto-switch when $PWD matches their glob. When
+  several globs match, the most specific one (most non-wildcard characters)
+  wins; ties go to the earlier registry entry. The first
   workspace with NO bindings is the default fallback (normally 'personal') -
   it's applied whenever no binding matches and nothing was set explicitly, so
   a fresh terminal always shows a labeled workspace instead of a bare icon.

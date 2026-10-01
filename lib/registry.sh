@@ -70,8 +70,12 @@ _cws_autobind() {
   [ -f "$CWS_REG" ] || return
   _cws_load
 
-  local name binds rest m
+  local name binds rest m lit best= best_score=-1
 
+  # The most specific matching binding wins, not the first one: a catch-all
+  # like personal's `$HOME/*` must not shadow `**/dev/*expensify*`.
+  # Specificity = number of literal (non-wildcard) characters in the glob;
+  # ties go to the earlier registry entry.
   for name in "${_CWS_ORDER[@]}"; do
     binds=${_CWS_BIND[$name]:-}
     [ -z "$binds" ] && continue
@@ -84,13 +88,21 @@ _cws_autobind() {
       [ -z "$m" ] && continue
       case "$PWD" in
         $m)
-          [ "${CLAUDE_WORKSPACE:-}" = "$name" ] || _cws_apply "$name"
-          _CWS_AUTO="$name"
-          return
+          lit=${m//[*?]/}
+          if [ "${#lit}" -gt "$best_score" ]; then
+            best=$name
+            best_score=${#lit}
+          fi
           ;;
       esac
     done
   done
+
+  if [ -n "$best" ]; then
+    [ "${CLAUDE_WORKSPACE:-}" = "$best" ] || _cws_apply "$best"
+    _CWS_AUTO="$best"
+    return
+  fi
 
   # no binding matched: drop only an auto-applied workspace, keep explicit ones
   if [ -n "${_CWS_AUTO:-}" ] && [ "${CLAUDE_WORKSPACE:-}" = "$_CWS_AUTO" ]; then
