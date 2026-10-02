@@ -19,10 +19,31 @@ source "$CWS_HOME/lib/theme-gen.sh"
 source "$CWS_HOME/lib/commands.sh"
 source "$CWS_HOME/lib/prompt.sh"
 
+# Shells opened before a cws change keep running the old functions, so a
+# fix to e.g. binding matching never reached them. On every cd, re-source
+# cws when any of its files changed since this shell loaded them.
+zmodload -F zsh/stat b:zstat 2>/dev/null
+_cws_src_sig() {
+  local -a t
+  zstat -A t +mtime -- "$CWS_HOME"/lib/*.sh "$CWS_HOME/shell/cws.zsh" 2>/dev/null
+  REPLY="${t[*]}"
+}
+_cws_chpwd() {
+  local REPLY
+  _cws_src_sig
+  if [[ "$REPLY" != "$_CWS_SRC_SIG" ]]; then
+    _CWS_RELOADING=1 source "$CWS_HOME/shell/cws.zsh"
+  else
+    _cws_autobind
+  fi
+}
+_cws_src_sig; _CWS_SRC_SIG=$REPLY
+
 autoload -Uz add-zsh-hook
-add-zsh-hook chpwd _cws_autobind
+add-zsh-hook -d chpwd _cws_autobind
+add-zsh-hook chpwd _cws_chpwd
 _cws_autobind
-[[ -o interactive ]] && _cws_check_update
+[[ -o interactive && -z "${_CWS_RELOADING:-}" ]] && _cws_check_update
 
 # add this to PROMPT (with `setopt prompt_subst`), e.g.:
 #   PROMPT='%n@%m $(cws_prompt_seg)%~ > '

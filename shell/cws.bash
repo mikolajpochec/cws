@@ -29,11 +29,25 @@ source "$CWS_HOME/lib/theme-gen.sh"
 source "$CWS_HOME/lib/commands.sh"
 source "$CWS_HOME/lib/prompt.sh"
 
+# Shells opened before a cws change keep running the old functions; on every
+# directory change, re-source cws when any of its files changed since load.
+_cws_src_sig() {
+  stat -f %m "$CWS_HOME"/lib/*.sh "$CWS_HOME/shell/cws.bash" 2>/dev/null ||
+    stat -c %Y "$CWS_HOME"/lib/*.sh "$CWS_HOME/shell/cws.bash" 2>/dev/null
+}
+_CWS_SRC_SIG=$(_cws_src_sig)
+
 _CWS_LAST_PWD=""
 _cws_precmd() {
   if [[ "$PWD" != "$_CWS_LAST_PWD" ]]; then
     _CWS_LAST_PWD="$PWD"
-    _cws_autobind
+    if [[ "$(_cws_src_sig)" != "$_CWS_SRC_SIG" ]]; then
+      _CWS_RELOADING=1
+      source "$CWS_HOME/shell/cws.bash"
+      unset _CWS_RELOADING
+    else
+      _cws_autobind
+    fi
   fi
 }
 
@@ -43,7 +57,7 @@ elif [[ "$PROMPT_COMMAND" != *"_cws_precmd"* ]]; then
   PROMPT_COMMAND="_cws_precmd;$PROMPT_COMMAND"
 fi
 _cws_autobind
-case $- in *i*) _cws_check_update ;; esac
+[[ -z "${_CWS_RELOADING:-}" ]] && case $- in *i*) _cws_check_update ;; esac
 
 # add this to PS1, e.g.:
 #   PS1='\u@\h $(cws_prompt_seg_bash)\w \$ '
