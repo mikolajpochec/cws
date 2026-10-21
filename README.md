@@ -54,6 +54,7 @@ cws <name>               set env for current shell (auto-rebind keeps it in sync
 cws <name> <claude args> one-shot launch claude in that workspace
 cws ls                   list workspaces + bindings + colors
 cws add <name> [globs]   add a workspace - color + theme auto-assigned
+                         (--color #rrggbb picks the color instead)
 cws bind <name> [dir]    bind a directory (+ subtree) to a workspace - current dir if omitted
 cws rm <name>            remove a workspace (registry + token; config dir kept)
 cws auth <name>          claude auth login for that workspace's account

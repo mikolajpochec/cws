@@ -255,8 +255,9 @@ USAGE
   cws theme <theme>        set theme for the active workspace
   cws theme <ws> <theme>   set theme for a named workspace
   cws theme --unshadow     drop the theme key from ~/.claude/settings.json
-  cws add <name> [glob1,glob2...]  add a workspace: config dir, registry row,
-                                    auto-assigned color, auto-generated theme
+  cws add <name> [glob1,glob2...] [--color #rrggbb]
+                           add a workspace: config dir, registry row,
+                           auto-assigned color (or --color), generated theme
   cws bind <name>          bind the current directory (+ subtree) to a workspace
   cws bind <name> <dir>    bind a given directory (+ subtree) to a workspace
   cws auth <name>          claude auth login for that workspace's account
@@ -324,7 +325,7 @@ _cws_ls() {
 _cws_add() {
   local name=$1; shift
   if [[ -z $name ]]; then
-    echo "usage: cws add <name> [glob1,glob2...]" >&2
+    echo "usage: cws add <name> [glob1,glob2...] [--color #rrggbb]" >&2
     return 1
   fi
   if [[ ! $name =~ ^[a-zA-Z0-9_-]+$ ]]; then
@@ -336,12 +337,24 @@ _cws_add() {
     echo "cws add: workspace '$name' already exists" >&2
     return 1
   fi
-  local dir binds=$1
+  local dir binds="" color=""
+  while (( $# > 0 )); do
+    case $1 in
+      --color)
+        (( $# >= 2 )) || { echo "cws add: --color needs a value" >&2; return 1; }
+        color=$2; shift 2 ;;
+      --color=*) color=${1#--color=}; shift ;;
+      *) binds=$1; shift ;;
+    esac
+  done
+  if [[ -n $color && ! $color =~ ^#[0-9a-fA-F]{6}$ ]]; then
+    echo "cws add: --color must be a hex color like #d4a72c" >&2
+    return 1
+  fi
   [[ $name == personal ]] && dir="$HOME/.claude" || dir="$HOME/.claude-$name"
   mkdir -p "$dir"
 
-  local color
-  color=$(_cws_next_color)
+  [[ -z $color ]] && color=$(_cws_next_color)
 
   if [[ -s "$CWS_REG" && $(tail -c1 "$CWS_REG" 2>/dev/null) != $'\n' ]]; then
     echo "" >> "$CWS_REG"
