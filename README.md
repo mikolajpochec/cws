@@ -1,40 +1,46 @@
-# cws — Claude Workspace Switcher
-<img width="1237" height="845" alt="image" src="https://github.com/user-attachments/assets/2ccb86bc-8a2f-4a31-946d-b797d9c36d51" />
+<h1 align="center">cws</h1>
 
-Switch between multiple Claude Code accounts/config dirs (`personal`, `work`,
-whatever you add) in your shell, with auto-binding by directory, per-workspace
-colored prompt badges, and auto-generated matching Claude Code themes.
+<p align="center"><b>One shell, many Claude Code accounts.</b><br>
+<code>cd</code> into a project and Claude Code is already logged in as the right account.</p>
 
-Each workspace maps to its own `CLAUDE_CONFIG_DIR` (a separate `~/.claude-*`
-directory), so logins, settings, MCP servers, history, and themes are fully
-isolated per account. Login is stored per-config-dir in the OS keychain by
-`claude` itself — cws never touches or stores credentials.
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-24292f?style=flat-square"></a>
+  <img alt="zsh and bash" src="https://img.shields.io/badge/shell-zsh%20%7C%20bash-89e051?style=flat-square">
+  <img alt="macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square">
+  <img alt="Claude Code" src="https://img.shields.io/badge/for-Claude_Code-7a4dff?style=flat-square">
+</p>
 
-## Requirements
+<p align="center">
+  <a href="#install"><b>Install</b></a> &nbsp;·&nbsp;
+  <a href="#quick-start"><b>Quick start</b></a> &nbsp;·&nbsp;
+  <a href="#commands"><b>Commands</b></a>
+</p>
 
-- zsh or bash 4+ (macOS ships bash 3.2 — install a newer one for bash support:
-  `brew install bash`; zsh has no such requirement)
-- `python3` (theme generation, JSON settings edits, status line)
+<p align="center"><img width="900" alt="Two terminals in different workspaces, each with its own colored badge, theme and status line" src="https://github.com/user-attachments/assets/2ccb86bc-8a2f-4a31-946d-b797d9c36d51"></p>
+
+## Why
+
+You have a personal Claude account and a work one (maybe a client's too). Claude Code keeps one
+login per config directory, so switching means logging out and in, or juggling
+`CLAUDE_CONFIG_DIR` by hand. cws does it for you:
+
+- **Isolated workspaces.** Each one is its own config dir with its own login, settings, MCP
+  servers, history and theme.
+- **Switches by directory.** Bind `~/dev/work` to `work` and every shell inside it uses that account.
+  Leave and you're back on your default.
+- **You always know where you are.** Each workspace gets a color: a prompt badge, a matching
+  Claude Code theme generated from it, and a status line in the same color.
+- **Never touches credentials.** Logins stay in the OS keychain, stored by `claude` itself.
+- **Plain shell.** zsh or bash plus `python3`, nothing to compile.
 
 ## Install
 
 ```sh
 git clone https://github.com/mikolajpochec/cws.git ~/dev/cws
-cd ~/dev/cws
-./install.sh
+~/dev/cws/install.sh
 ```
 
-This is idempotent: it won't overwrite an existing workspace registry or an
-existing cws block in your shell rc files. On a fresh install it creates two
-example workspaces, `personal` (→ `~/.claude`) and `work` (→ `~/.claude-work`),
-each with an auto-generated theme, and wires sourcing into `~/.zshrc` and
-`~/.bashrc`.
-
-bash support needs bash 4+ (associative arrays) — macOS ships bash 3.2, so
-on a Mac without a newer bash (`brew install bash`) the installer skips the
-`~/.bashrc` block and prints a note; zsh has no such requirement.
-
-After installing, add the prompt segment to your prompt:
+Then add the badge to your prompt and open a new terminal:
 
 ```sh
 # zsh (needs: setopt prompt_subst)
@@ -44,84 +50,92 @@ PROMPT='%n@%m $(cws_prompt_seg)%~ > '
 PS1='\u@\h $(cws_prompt_seg_bash)\w \$ '
 ```
 
-Open a new terminal and you should see a colored `[  personal]` badge.
+The installer is safe to run again. A fresh install creates two example workspaces, `personal`
+(`~/.claude`) and `work` (`~/.claude-work`).
 
-## Usage
+> [!NOTE]
+> bash support needs bash 4+. macOS ships 3.2, so run `brew install bash` or use zsh.
 
-```
-cws                      show active workspace
-cws <name>               set env for current shell (auto-rebind keeps it in sync)
-cws <name> <claude args> one-shot launch claude in that workspace
-cws ls                   list workspaces + bindings + colors
-cws add <name> [globs]   add a workspace - color + theme auto-assigned
-                         (--color #rrggbb picks the color instead)
-cws bind <name> [dir]    bind a directory (+ subtree) to a workspace - current dir if omitted
-cws rm <name>            remove a workspace (registry + token; config dir kept)
-cws auth <name>          claude auth login for that workspace's account
-cws theme                show/set a workspace's theme
-cws trust [path]         mark a path trusted in the active workspace's config
-cws search-session <kw>  fuzzy-search past sessions across workspaces (-w a,b to narrow)
-cws update               pull the latest cws release
-cws help                 full command reference
-```
-
-### Binding a workspace to a directory
-
-For an existing workspace, bind an actual directory (its exact path plus
-subtree, no glob-writing needed):
+## Quick start
 
 ```sh
-cd ~/dev/client-x
-cws bind client-x          # binds the current directory
-cws bind client-x ~/other  # or bind an arbitrary directory
+cws add client-x            # new workspace: config dir, color and theme
+cws auth client-x           # log in with that account, once
+cws bind client-x ~/dev/x   # ~/dev/x and everything under it use client-x
+cd ~/dev/x && claude        # already the right account
 ```
 
-For a glob pattern instead (e.g. matching several directories by name), pass
-it when creating the workspace:
+Need another account for a single command? `cws work -p "summarize this repo"` runs `claude` in
+`work` without switching your shell.
 
-```sh
-cws add client-x '**/dev/*client-x*'
-```
+## Commands
 
-Either way, `cd`-ing into a bound path auto-switches to that workspace;
-`cd`-ing back out returns to whatever the fallback workspace is (the first
-entry in the registry with no bindings — `personal` by default).
+| Command | What it does |
+|---|---|
+| `cws` | Show the active workspace |
+| `cws <name>` | Switch this shell to a workspace |
+| `cws <name> <claude args>` | Run `claude` once in a workspace |
+| `cws ls` | List workspaces, bindings, colors and login status |
+| `cws add <name> [globs] [--color #rrggbb]` | Add a workspace; color and theme are picked for you, or seeded from `--color` |
+| `cws bind <name> [dir]` | Bind a directory and its subtree (current dir if omitted) |
+| `cws auth <name>` | Log that workspace in to its account |
+| `cws theme [<ws>] [<theme>]` | Show or set a workspace's theme |
+| `cws trust [path]` | Mark a path trusted in the active workspace |
+| `cws search-session <keywords>` | Fuzzy-search past sessions across workspaces (`-w a,b` to narrow) |
+| `cws rm <name>` | Remove a workspace (its config dir is kept) |
+| `cws update` | Pull the latest cws |
+| `cws help` | Full reference |
 
-### Colors & themes
+## Details
 
-`cws add` auto-assigns the next unused color from a 12-color palette
-(`lib/colors.sh`) and generates a full Claude Code custom theme
-(`lib/theme-gen.sh`, derives the theme's ~40 color keys from the one accent
-color via HSL math) written to `<configDir>/themes/<name>.json`, set as that
-workspace's default theme. No manual theme authoring needed.
+<details>
+<summary><b>Status line</b></summary>
 
-### Status line
-
-`cws add` (and `install.sh` for the two example workspaces) also wires each
-workspace's `settings.json` to `lib/statusline.sh` as its `statusLine`
-command. It shows, in the workspace's badge color:
+Every workspace's `settings.json` gets `lib/statusline.sh` as its `statusLine`, drawn in the
+workspace color:
 
 ```
  personal  Sonnet 5  |  project-dir  |  [####------] 42% ctx
 effort high  |  cost $0.12  |  time 12m5s  |  5h limit 24%
 ```
 
-workspace badge, model, dir, and context-window bar on line one; effort
-level, session cost/duration, and 5-hour rate limit on line two
-(fields that aren't present in a given session, like `effort` or
-`rate_limits`, are just omitted). It reads the badge color back out of the
-private registry via `$CLAUDE_WORKSPACE`/`$CWS_ROOT`, both exported by
-`shell/cws.zsh`/`cws.bash`, so it stays in sync with the prompt segment
-without hardcoding any workspace name. Never overwrites a `statusLine` you've
-set to something else — it only claims the key when it's unset or already
-points at `statusline.sh`.
+Fields a session doesn't have are left out. A `statusLine` you set yourself is never replaced.
+</details>
 
-### Searching sessions
+<details>
+<summary><b>Binding with globs</b></summary>
 
-`cws search-session <keywords...>` (alias `cws search`) fuzzy-searches the
-Claude Code sessions of every workspace - titles, project path, git branch,
-your prompts and the chat text - and lists the best matches, each with a
-ready-to-paste resume command (`cd <project> && cws <ws> --resume <id>`).
+`cws bind` binds one exact directory. To match several by name, pass globs when creating the
+workspace:
+
+```sh
+cws add client-x '**/dev/*client-x*'
+```
+
+When several workspaces match, the most specific glob (most non-wildcard characters) wins, so
+`~/dev/*client-x*` beats a catch-all `~/*`; ties go to the earlier entry. When nothing matches, cws
+falls back to the first workspace with no bindings (`personal` by default).
+</details>
+
+<details>
+<summary><b>Colors and themes</b></summary>
+
+`cws add` takes the next unused color from a 12-color palette (`lib/colors.sh`). `lib/theme-gen.sh`
+derives a full Claude Code theme from it, about 40 color keys via HSL math, writes it to
+`<configDir>/themes/<name>.json` and sets it as that workspace's theme. Pass `--color #rrggbb` to
+pick the color yourself; the theme is generated from it the same way:
+
+```sh
+cws add assistant --color '#d4a72c'   # gold
+```
+</details>
+
+<details>
+<summary><b>Searching sessions</b></summary>
+
+`cws search-session <keywords...>` (alias `cws search`) fuzzy-searches the Claude Code sessions of
+every workspace: titles, project path, git branch, your prompts and the chat text. It lists the best
+matches, each with a ready-to-paste resume command (`cd <project> && cws <ws> --resume <id>`).
 Matching is typo-tolerant; sessions that match every keyword rank first.
 
 ```sh
@@ -129,55 +143,49 @@ cws search-session window queue ratio
 cws search-session -w personal,work -n 20 auth bug   # or --workspace=personal,work
 ```
 
-Extracted text is cached in `$CWS_ROOT/.search-cache` (per transcript, keyed
-by mtime + size), so repeat searches only re-read changed sessions.
+Extracted text is cached in `$CWS_ROOT/.search-cache` (per transcript, keyed by mtime + size), so
+repeat searches only re-read changed sessions.
+</details>
 
-### Updating
+<details>
+<summary><b>Updating</b></summary>
 
-`cws update` fetches `origin`, shows what's new, and fast-forwards `$CWS_HOME`
-(only works for a `git clone` install, the recommended path above - it
-declines cleanly on a vendored/copied checkout with no remote). Each
-interactive shell also does a passive, offline check at startup - it never
-hits the network itself, just reads whatever `origin/<branch>` was last
-fetched to, and prints a one-line nudge if you're behind. Once a week it
-kicks a silent background `git fetch` so that check has fresh data next time,
-without ever blocking shell startup.
+`cws update` fetches, shows what's new and fast-forwards your clone. Shells check for updates
+offline at startup and print a one-line nudge when you're behind; a silent background fetch runs
+once a week so that check stays fresh without slowing startup.
+</details>
 
-## Layout
+<details>
+<summary><b>Where your setup lives</b></summary>
+
+This repo holds only code. Your workspace list lives in `$CWS_ROOT` (default
+`~/.config/claude-workspaces/workspaces`), one line per workspace:
+
+```
+name|configDir|keychainService|bindings|color
+```
+
+- `bindings`: comma-separated globs matched against `$PWD`; the most specific match wins; empty
+  means never auto-bound.
+- `color`: hex like `#c084fc`, used for the badge and as the theme seed.
+</details>
+
+<details>
+<summary><b>Code layout</b></summary>
 
 ```
 shell/cws.zsh      zsh entrypoint (chpwd hook + prompt var)
 shell/cws.bash     bash entrypoint (PROMPT_COMMAND + PS1)
 lib/registry.sh    registry parsing, env apply/clear, directory auto-bind
 lib/colors.sh      palette + color assignment
-lib/theme-gen.sh   accent-color -> full theme JSON generator
-lib/commands.sh    add/rm/ls/theme/auth/trust/status/help + the cws dispatcher
-lib/prompt.sh      cws_prompt_seg (zsh) / cws_prompt_seg_bash (bash)
-lib/statusline.sh  Claude Code statusLine renderer (workspace-colored)
+lib/theme-gen.sh   accent color -> full theme JSON
+lib/commands.sh    the cws command and its subcommands
+lib/prompt.sh      prompt segments for zsh and bash
+lib/statusline.sh  Claude Code status line renderer
 install.sh         idempotent installer
 ```
-
-This repo holds only the *code*. Your actual workspace list (account names,
-config dir paths, directory bindings, colors) lives outside the repo in
-`$CWS_ROOT` (default `~/.config/claude-workspaces/workspaces`) and is never
-read from or written into this repo — safe to keep this repo public while
-keeping your account setup private.
-
-## Registry format
-
-```
-name|configDir|keychainService|bindings|color
-```
-
-- `bindings`: comma-separated glob patterns matched against `$PWD`. When
-  several workspaces match, the most specific glob (most non-wildcard
-  characters) wins, so `~/dev/*client-x*` beats a catch-all `~/*`; ties go to
-  the earlier entry. Empty =
-  never auto-bound by directory; the first such entry is the fallback
-  workspace used when nothing else matches.
-- `color`: hex string (`#c084fc`), used for the prompt badge and as the seed
-  for that workspace's generated theme.
+</details>
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE)
