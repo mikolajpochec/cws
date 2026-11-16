@@ -1,13 +1,14 @@
 <!doctype html>
-<!-- Source of docs/hero.png. Synthetic demo data only (user "alex", ~/dev/acme).
+<!-- Source of docs/hero.png. Synthetic demo data only (user "mikolaj", ~/dev/acme, made-up sessions).
      Regenerate: docs/render-hero.sh -->
 <html><head><meta charset="utf-8"><style>
   :root { --violet:#c084fc; --blue:#60a5fa; --clay:#d97757; --dim:#6b7280; --fg:#e5e7eb; }
   * { box-sizing:border-box; margin:0; padding:0; }
   html,body { width:1240px; height:800px; overflow:hidden; }
-  body { background: radial-gradient(1200px 700px at 15% 10%, #3b2a5c 0%, transparent 60%),
-                      radial-gradient(1000px 700px at 95% 100%, #1e3a5f 0%, transparent 60%),
-                      #14121c;
+  body { background: radial-gradient(900px 620px at 8% 100%, #4a2f78 0%, transparent 62%),
+                      radial-gradient(900px 620px at 92% 100%, #1d4573 0%, transparent 62%),
+                      radial-gradient(700px 400px at 50% 0%, #2a2440 0%, transparent 70%),
+                      #121019;
          font-family: "JetBrains Mono", "SF Mono", Menlo, monospace; font-size:15px; line-height:22px; color:var(--fg); }
   .win { position:absolute; background:#0c0c0f; border-radius:12px; border:1px solid #2a2a33;
          box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04) inset; overflow:hidden; }
@@ -17,55 +18,76 @@
   .title { flex:1; text-align:center; margin-right:60px; }
   .body { padding:16px 20px; white-space:pre; }
   .v { color:var(--violet); } .b { color:var(--blue); } .c { color:var(--clay); } .d { color:var(--dim); }
-  .g { color:#4ade80; } .w { color:#fff; font-weight:600; }
-  .badge { padding:0 6px; color:#141414; }
-  .bv { background:var(--violet); } .bb { background:var(--blue); }
-  .box { border:1px solid var(--blue); border-radius:4px; padding:14px 18px; display:flex; gap:22px; position:relative; margin-top:6px; white-space:normal; }
-  .box .legend { position:absolute; top:-12px; left:16px; background:#0c0c0f; padding:0 8px; }
-  .box .l { flex:1.1; text-align:center; white-space:pre; }
-  .box .r { flex:1; border-left:1px solid #2a3a55; padding-left:18px; white-space:pre; overflow:hidden; }
+  .w { color:#fff; font-weight:600; }
+
+  /* A Claude Code window takes its accent from the workspace it runs in. */
+  .personal { --acc:var(--violet); --line:#3d2c57; --bg:#0e0c12; background:var(--bg); border-color:#4b3570;
+              box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(192,132,252,.13); }
+  .work     { --acc:var(--blue);   --line:#243a57; --bg:#0b0d12; background:var(--bg); border-color:#2c4a73;
+              box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(96,165,250,.13); }
+  .a { color:var(--acc); }
+  .badge { padding:0 6px; color:#141414; background:var(--acc); }
+  .box { border:1px solid var(--acc); border-radius:4px; padding:14px 16px; display:flex; gap:16px; position:relative; margin-top:6px; white-space:normal; }
+  .box .legend { position:absolute; top:-12px; left:16px; background:var(--bg); padding:0 8px; }
+  .box .l { flex:1; text-align:center; white-space:pre; }
+  .box .r { flex:1.05; border-left:1px solid var(--line); padding-left:16px; white-space:pre; overflow:hidden; }
   .mark { font-size:46px; line-height:60px; color:var(--clay); }
-  .rule { border-top:1px solid var(--blue); margin:14px 0 8px; }
+  .rule { border-top:1px solid var(--acc); margin:14px 0 8px; }
   .cursor { background:#e5e7eb; color:#0c0c0f; }
 </style></head><body>
 
-<div class="win" style="left:36px; top:36px; width:720px; height:420px;">
-  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">alex@mbp: ~</span></div>
-  <div class="body"><span class="d">alex@mbp</span> <span class="v">[<span class="c">✱</span> personal]</span> ~ &gt; cws ls
+<div class="win" style="left:200px; top:32px; width:840px; height:222px;">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">mikolaj@mbp: ~/dev/acme</span></div>
+  <div class="body"><span class="d">mikolaj@mbp</span> <span class="v">[<span class="c">✱</span> personal]</span> ~ &gt; cws ls
 active: personal   keychain logins: 2
 &gt; <span class="v">personal</span> -&gt; ~/.claude  login recorded
   <span class="b">work</span> -&gt; ~/.claude-work [bind: ~/dev/acme/*]  login recorded
 
-<span class="d">alex@mbp</span> <span class="v">[<span class="c">✱</span> personal]</span> ~ &gt; cd ~/dev/acme
-<span class="d">alex@mbp</span> <span class="b">[<span class="c">✱</span> work]</span> ~/dev/acme &gt; cws status
-workspace:  <span class="b">work</span>
-config_dir: ~/.claude-work
-theme:      custom:work-blue
-oauth:      account login (per-config keychain)
-<span class="d">alex@mbp</span> <span class="b">[<span class="c">✱</span> work]</span> ~/dev/acme &gt; claude</div>
+<span class="d">mikolaj@mbp</span> <span class="v">[<span class="c">✱</span> personal]</span> ~ &gt; cd ~/dev/acme
+<span class="d">mikolaj@mbp</span> <span class="b">[<span class="c">✱</span> work]</span> ~/dev/acme &gt; <span class="cursor"> </span></div>
 </div>
 
-<div class="win" style="left:420px; top:270px; width:784px; height:494px; border-color:#2b3b55;">
-  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title"><span class="c">✱</span> Claude Code</span></div>
+<div class="win personal" style="left:36px; top:284px; width:574px; height:492px;">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title"><span class="c">✱</span> Claude Code · personal</span></div>
   <div class="body" style="padding-top:22px;"><div class="box">
-    <span class="legend"><span class="b">Claude Code</span> <span class="d">v2.1</span></span>
+    <span class="legend"><span class="a">Claude Code</span> <span class="d">v2.1</span></span>
+    <div class="l"><span class="w">Welcome back!</span>
+<span class="mark">✱</span>
+<span class="d">Opus 5 · Claude Max</span>
+<span class="d">~/dev/dotfiles</span></div>
+    <div class="r"><span class="a">Recent activity</span>
+<span class="d">Tidy zsh startup</span>
+<span class="d">Add tmux keybinds</span>
+<span class="d">Fix nvim LSP paths</span></div>
+  </div>
+
+<span class="d">&gt;</span> why is my shell slow to start?
+
+  <span class="c">●</span> <span class="a">.zshrc</span> runs compinit on every start,
+    about 310 ms. I'll cache the dump and
+    rebuild it once a day.<div class="rule"></div><span class="d">&gt;</span> <span class="cursor"> </span><div class="rule" style="margin-top:8px"></div><span class="badge">personal</span> Opus 5 <span class="d">|</span> dotfiles <span class="d">|</span> <span class="a">[███░░░░░░░]</span> 31% ctx
+<span class="d">effort</span> high <span class="d">|</span> <span class="d">cost</span> $0.00 <span class="d">|</span> <span class="d">time</span> 7m45s</div>
+</div>
+
+<div class="win work" style="left:630px; top:284px; width:574px; height:492px;">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title"><span class="c">✱</span> Claude Code · work</span></div>
+  <div class="body" style="padding-top:22px;"><div class="box">
+    <span class="legend"><span class="a">Claude Code</span> <span class="d">v2.1</span></span>
     <div class="l"><span class="w">Welcome back!</span>
 <span class="mark">✱</span>
 <span class="d">Opus 5 · Claude Team</span>
 <span class="d">~/dev/acme</span></div>
-    <div class="r"><span class="b">Tips for getting started</span>
-Run /init to create a CLAUDE.md
-<span class="d">───────────────────────────</span>
-<span class="b">Recent activity</span>
+    <div class="r"><span class="a">Recent activity</span>
 <span class="d">Refactor invoice export</span>
-<span class="d">Fix webhook retries</span></div>
+<span class="d">Fix webhook retries</span>
+<span class="d">Bump Go to 1.25</span></div>
   </div>
 
 <span class="d">&gt;</span> why does the billing retry test flake?
 
-  <span class="c">●</span> Looking at <span class="b">billing/retry_test.go</span>: the backoff
-    uses wall-clock time, so a slow CI runner can skip
-    the second attempt. I'll inject a fake clock.<div class="rule"></div><span class="d">&gt;</span> <span class="cursor"> </span><div class="rule" style="margin-top:8px"></div><span class="badge bb">work</span> Opus 5 <span class="d">|</span> acme <span class="d">|</span> <span class="b">[██░░░░░░░░]</span> 18% ctx
+  <span class="c">●</span> <span class="a">billing/retry_test.go</span> uses wall-clock
+    backoff, so a slow CI runner skips the
+    second attempt. I'll inject a fake clock.<div class="rule"></div><span class="d">&gt;</span> <span class="cursor"> </span><div class="rule" style="margin-top:8px"></div><span class="badge">work</span> Opus 5 <span class="d">|</span> acme <span class="d">|</span> <span class="a">[██░░░░░░░░]</span> 18% ctx
 <span class="d">effort</span> medium <span class="d">|</span> <span class="d">cost</span> $0.42 <span class="d">|</span> <span class="d">time</span> 3m12s</div>
 </div>
 

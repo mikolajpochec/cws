@@ -16,7 +16,7 @@
   <a href="#commands"><b>Commands</b></a>
 </p>
 
-<p align="center"><img width="900" alt="cd into a bound directory switches the shell to the work workspace; Claude Code there shows the workspace color in its theme and status line" src="docs/hero.png"></p>
+<p align="center"><img width="900" alt="A shell switching from the personal to the work workspace on cd, and two Claude Code windows side by side: personal in violet, work in blue, each with its own theme and status line" src="docs/hero.png"></p>
 
 ## Why
 
