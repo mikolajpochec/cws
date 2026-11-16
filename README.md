@@ -16,7 +16,7 @@
   <a href="#commands"><b>Commands</b></a>
 </p>
 
-<p align="center"><img width="900" alt="Two terminals in different workspaces, each with its own colored badge, theme and status line" src="https://github.com/user-attachments/assets/2ccb86bc-8a2f-4a31-946d-b797d9c36d51"></p>
+<p align="center"><img width="900" alt="cd into a bound directory switches the shell to the work workspace; Claude Code there shows the workspace color in its theme and status line" src="docs/hero.png"></p>
 
 ## Why
 
